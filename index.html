@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CraveDecode - AI Craving Intelligence System</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --text-main: #1e293b;
+      --text-light: #64748b;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+      --radius-lg: 1.5rem;
+      --radius-full: 9999px;
+      --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    #app-container {
+      width: 100%;
+      max-width: 460px;
+      height: 650px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Screen Management */
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateX(30px);
+      visibility: hidden;
+      transition: var(--transition);
+      pointer-events: none;
+    }
+    
+    .screen.active {
+      opacity: 1;
+      transform: translateX(0);
+      visibility: visible;
+      pointer-events: auto;
+    }
+    
+    .screen.previous {
+      transform: translateX(-30px);
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* Typography */
+    h1 { font-size: 2rem; font-weight: 700; text-align: center; line-height: 1.2; margin-bottom: 0.5rem; color: var(--primary); }
+    h2 { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 2rem; line-height: 1.3; }
+    p.subtitle { text-align: center; color: var(--text-light); margin-bottom: 2rem; font-size: 1.1rem; }
+
+    /* Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+
+    /* Interactive Buttons */
+    .option-btn {
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      padding: 1.2rem 1rem;
+      border-radius: 1rem;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .option-btn:hover, .option-btn:focus-visible {
+      transform: scale(1.03);
+      border-color: var(--primary);
+    }
+    
+    .option-btn.selected {
+      background: #f5f3ff;
+      border-color: var(--primary);
+      color: var(--primary-hover);
+    }
+    
+    .option-btn .emoji { font-size: 2.5rem; margin-bottom: 0.2rem; }
+
+    /* Action buttons */
+    .action-row {
+      margin-top: auto;
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .btn {
+      border: none;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-full);
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-primary:disabled {
+      background: #cbd5e1;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid #e2e8f0;
+      color: var(--text-light);
+      flex: 0 0 auto;
+      padding: 1rem;
+    }
+    
+    .btn-secondary:hover { background: #f8fafc; color: var(--text-main); }
+
+    /* Slider styling */
+    .slider-wrapper { margin: 2rem 0; text-align: center; }
+    
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+      margin: 1.5rem 0;
+    }
+    
+    input[type=range]:focus { outline: none; }
+    
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 28px; width: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      margin-top: -10px;
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+      transition: transform 0.2s ease;
+    }
+    
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
+    
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%; height: 8px;
+      cursor: pointer;
+      background: linear-gradient(to right, var(--primary) 50%, #e2e8f0 50%);
+      border-radius: var(--radius-full);
+    }
+    
+    .slider-labels {
+      display: flex; justify-content: space-between;
+      color: var(--text-light); font-size: 1.5rem; padding: 0 5px;
+    }
+    
+    .slider-value {
+      font-size: 4rem; font-weight: 700; color: var(--primary);
+      margin-bottom: 0.5rem; transition: all 0.2s ease;
+    }
+    
+    .slider-desc { font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+      position: absolute; inset: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 100; opacity: 0; visibility: hidden; transition: var(--transition);
+    }
+    
+    #loadingOverlay.active { opacity: 1; visibility: visible; }
+    
+    .spinner {
+      width: 60px; height: 60px;
+      border: 5px solid #e2e8f0; border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 1s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      margin-bottom: 1.5rem;
+    }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Results Screen */
+    .result-content { height: 100%; display: flex; flex-direction: column; }
+    .flip-in { animation: flipIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    
+    @keyframes flipIn {
+      0% { transform: rotateX(-90deg); opacity: 0; }
+      100% { transform: rotateX(0deg); opacity: 1; }
+    }
+    
+    .risk-badge {
+      display: inline-block; padding: 0.4rem 1rem; border-radius: var(--radius-full);
+      font-size: 0.9rem; font-weight: 700; text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .risk-low { background: #d1fae5; color: #065f46; }
+    .risk-medium { background: #fef3c7; color: #92400e; }
+    .risk-high { background: #fee2e2; color: #991b1b; }
+    
+    .insight-card {
+      background: #f8fafc; border-radius: 1rem; padding: 1.2rem; margin-bottom: 1rem;
+      border-left: 4px solid var(--primary); box-shadow: var(--shadow-sm);
+    }
+    
+    .insight-card h3 { font-size: 1rem; color: var(--text-light); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .insight-card p { font-size: 1.05rem; font-weight: 600; line-height: 1.4; }
+    
+    .classification-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main); }
+    .classification-desc { color: var(--text-light); margin-bottom: 1.5rem; line-height: 1.5; }
+
+    /* Accessibility */
+    *:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="app-container" role="main" aria-live="polite">
+
+  <!-- Step 1: Craving Type -->
+  <section id="step1" class="screen active">
+    <h1>CraveDecode</h1>
+    <p class="subtitle">AI Craving Intelligence System</p>
+    <h2>What are you REALLY craving right now?</h2>
+    
+    <div class="grid-2">
+      <button class="option-btn" data-step="1" data-val="Sweet" aria-label="Craving Sweet">
+        <span class="emoji">🍫</span>
+        <span>Sweet</span>
+      </button>
+      <button class="option-btn" data-step="1" data-val="Salty" aria-label="Craving Salty">
+        <span class="emoji">🍟</span>
+        <span>Salty</span>
+      </button>
+      <button class="option-btn" data-step="1" data-val="Fast Food" aria-label="Craving Fast Food">
+        <span class="emoji">🍔</span>
+        <span>Fast Food</span>
+      </button>
+      <button class="option-btn" data-step="1" data-val="Random" aria-label="Craving Random">
+        <span class="emoji">🌀</span>
+        <span>Random</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Step 2: Feeling -->
+  <section id="step2" class="screen">
+    <h2>How are you feeling right now?</h2>
+    <p class="subtitle">Emotions often drive our food choices.</p>
+    
+    <div class="grid-2">
+      <button class="option-btn" data-step="2" data-val="Stressed">
+        <span class="emoji">😓</span><span>Stressed</span>
+      </button>
+      <button class="option-btn" data-step="2" data-val="Tired">
+        <span class="emoji">😴</span><span>Tired</span>
+      </button>
+      <button class="option-btn" data-step="2" data-val="Bored">
+        <span class="emoji">😶</span><span>Bored</span>
+      </button>
+      <button class="option-btn" data-step="2" data-val="Happy">
+        <span class="emoji">😄</span><span>Happy</span>
+      </button>
+      <button class="option-btn" data-step="2" data-val="Neutral">
+        <span class="emoji">😐</span><span>Neutral</span>
+      </button>
+    </div>
+    
+    <div class="action-row">
+      <button class="btn btn-secondary" onclick="prevStep(1)" aria-label="Go Back">←</button>
+    </div>
+  </section>
+
+  <!-- Step 3: Hunger -->
+  <section id="step3" class="screen">
+    <h2>Rate your true physical hunger</h2>
+    <p class="subtitle">Listen to your stomach, not your mind.</p>
+    
+    <div class="slider-wrapper">
+      <div id="hungerDisplay" class="slider-value">3</div>
+      <div id="hungerDesc" class="slider-desc">Moderate</div>
+      
+      <input type="range" id="hungerSlider" name="hungerSlider" min="1" max="5" step="1" value="3" aria-label="Hunger level 1 to 5" oninput="updateSliderUI(this.value)">
+      
+      <div class="slider-labels">
+        <span>🍽️ Full</span>
+        <span>Starving 🤤</span>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-secondary" onclick="prevStep(2)" aria-label="Go Back">←</button>
+      <button class="btn btn-primary" onclick="nextStep(4)">Continue</button>
+    </div>
+  </section>
+
+  <!-- Step 4: Time of Day -->
+  <section id="step4" class="screen">
+    <h2>What time of day is it?</h2>
+    <p class="subtitle">Circadian rhythms affect impulse control.</p>
+    
+    <div class="grid-3" style="display:flex; flex-direction:column;">
+      <button class="option-btn" data-step="4" style="flex-direction:row; justify-content:flex-start; padding:1.2rem 2rem;" data-val="Morning">
+        <span class="emoji" style="margin:0 1rem 0 0;">🌅</span><span>Morning</span>
+      </button>
+      <button class="option-btn" data-step="4" style="flex-direction:row; justify-content:flex-start; padding:1.2rem 2rem;" data-val="Afternoon">
+        <span class="emoji" style="margin:0 1rem 0 0;">☀️</span><span>Afternoon</span>
+      </button>
+      <button class="option-btn" data-step="4" style="flex-direction:row; justify-content:flex-start; padding:1.2rem 2rem;" data-val="Night">
+        <span class="emoji" style="margin:0 1rem 0 0;">🌙</span><span>Night</span>
+      </button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-secondary" onclick="prevStep(3)" aria-label="Go Back">←</button>
+      <button id="decodeBtn" class="btn btn-primary" disabled onclick="decodeCraving()">Decode My Craving</button>
+    </div>
+  </section>
+
+  <!-- Step 5: Results Screen -->
+  <section id="step5" class="screen">
+    <div class="result-content" id="resultContent">
+      <!-- Injected by JS -->
+    </div>
+    
+    <div class="action-row">
+      <button class="btn btn-primary" onclick="resetApp()">Analyze Another Craving</button>
+    </div>
+  </section>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <h2 style="color:var(--primary);">Decoding Pattern...</h2>
+  </div>
+
+</div>
+
+<script>
+  /**
+   * CraveDecode - Behavioral AI Intelligence Engine
+   */
+
+  // --- STATE MANAGEMENT ---
+  const state = {
+    cravingType: null,
+    feeling: null,
+    hungerLvl: 3,
+    timeOfDay: null
+  };
+
+  // --- UI CONTROLLERS ---
+
+  // Handle Option Selections
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const step = this.dataset.step;
+      const val = this.dataset.val;
+
+      // Clear previous selection in this step grid
+      this.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+
+      // Update State
+      if (step === '1') {
+        state.cravingType = val;
+        setTimeout(() => nextStep(2), 300); // Micro-interaction delay
+      }
+      else if (step === '2') {
+        state.feeling = val;
+        setTimeout(() => nextStep(3), 300);
+      }
+      else if (step === '4') {
+        state.timeOfDay = val;
+        document.getElementById('decodeBtn').disabled = false;
+      }
+    });
+  });
+
+  // Slider UI updates
+  function updateSliderUI(val) {
+    state.hungerLvl = parseInt(val, 10);
+    const slider = document.getElementById('hungerSlider');
+    const display = document.getElementById('hungerDisplay');
+    const desc = document.getElementById('hungerDesc');
+    
+    // Gradient fill logic
+    const percentage = ((val - 1) / 4) * 100;
+    slider.style.background = `linear-gradient(to right, var(--primary) ${percentage}%, #e2e8f0 ${percentage}%)`;
+    
+    display.innerText = val;
+    display.style.transform = 'scale(1.2)';
+    setTimeout(() => display.style.transform = 'scale(1)', 150);
+
+    const labels = ["Not Hungry", "Slightly Hungry", "Moderate", "Hungry", "Starving"];
+    desc.innerText = labels[val - 1];
+  }
+
+  // Navigation System
+  function nextStep(stepId) {
+    document.querySelector('.screen.active').classList.remove('active');
+    document.querySelector('.screen.active')?.classList.add('previous');
+    document.getElementById(`step${stepId}`).classList.remove('previous');
+    document.getElementById(`step${stepId}`).classList.add('active');
+  }
+
+  function prevStep(stepId) {
+    document.querySelector('.screen.active').classList.remove('active');
+    document.getElementById(`step${stepId}`).classList.remove('previous');
+    document.getElementById(`step${stepId}`).classList.add('active');
+  }
+
+  // Final Action System
+  function decodeCraving() {
+    const loading = document.getElementById('loadingOverlay');
+    loading.classList.add('active');
+    
+    setTimeout(() => {
+      loading.classList.remove('active');
+      renderResults();
+      nextStep(5);
+    }, 1200); // Simulated AI processing time
+  }
+
+  function resetApp() {
+    state.cravingType = null;
+    state.feeling = null;
+    state.hungerLvl = 3;
+    state.timeOfDay = null;
+
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('decodeBtn').disabled = true;
+    updateSliderUI(3);
+    document.getElementById('hungerSlider').value = 3;
+
+    nextStep(1);
+    
+    // Clear history visually
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('previous'));
+  }
+
+  // --- LOGIC ENGINE FUNCTIONS ---
+
+  function detectCravingType() {
+    const { cravingType, feeling, hungerLvl, timeOfDay } = state;
+    
+    if (hungerLvl >= 4) {
+      return { 
+        title: "Genuine Hunger", 
+        desc: "Your body is biologically signaling for calories and nutrients." 
+      };
+    }
+    if (cravingType === 'Sweet' && (feeling === 'Stressed' || feeling === 'Neutral')) {
+      return { 
+        title: "Emotional Reward Craving", 
+        desc: "You are subconsciously seeking comfort to regulate your nervous system." 
+      };
+    }
+    if (cravingType === 'Sweet' && feeling === 'Tired') {
+      return { 
+        title: "Energy Compensation", 
+        desc: "Your brain is fatigued and searching for rapid accessible glucose." 
+      };
+    }
+    if (timeOfDay === 'Night' && hungerLvl < 3) {
+      return { 
+        title: "Habit-Based Craving", 
+        desc: "This isn't physical starvation; it's an ingrained behavioral routine tied to evening relaxation." 
+      };
+    }
+    if (feeling === 'Bored') {
+      return { 
+        title: "Dopamine-Seeking", 
+        desc: "Your brain is under-stimulated and using food for entertainment." 
+      };
+    }
+    
+    return { 
+      title: "Sensory Satisfaction Craving", 
+      desc: "Sometimes, we just want a specific texture or flavor profile." 
+    };
+  }
+
+  function calculateImpulseRisk(typeTitle) {
+    const highRisk = ["Emotional Reward Craving", "Energy Compensation", "Habit-Based Craving"];
+    const mediumRisk = ["Dopamine-Seeking"];
+    
+    if (highRisk.includes(typeTitle) || state.feeling === 'Stressed') return { label: 'High', class: 'risk-high' };
+    if (mediumRisk.includes(typeTitle)) return { label: 'Medium', class: 'risk-medium' };
+    return { label: 'Low', class: 'risk-low' };
+  }
+
+  function generateSmartAlternative() {
+    const alternatives = {
+      "Sweet": "Dark chocolate (70%+), Greek yogurt with berries, or cinnamon apple slices.",
+      "Salty": "Roasted salted edamame, air-popped popcorn, or mixed nuts.",
+      "Fast Food": "A homemade wrap with lean protein, or baked seasoned potato wedges.",
+      "Random": "A large glass of cold water, herbal tea, or sugar-free gum."
+    };
+    return alternatives[state.cravingType];
+  }
+
+  function generateHabitTip() {
+    const tips = {
+      "Stressed": "Wait 10 minutes. Practice 4-7-8 breathing or do a rapid physical task to break the loop.",
+      "Tired": "You need rest, not sugar. Drink a glass of cold water and rest your eyes for 10 minutes.",
+      "Bored": "Change your environment. Move to a different room or engage in a 5-minute distracting task.",
+      "Happy": "Incorporate mindful eating. Consume exactly half of what you intend, slowly, then reassess.",
+      "Neutral": "Delay the craving by 15 minutes. Often, passing cravings dissolve when ignored."
+    };
+    return tips[state.feeling] || "Practice mindful eating and assess your body's true needs.";
+  }
+
+  // --- RENDERING RESULTS ---
+
+  function renderResults() {
+    const classification = detectCravingType();
+    const risk = calculateImpulseRisk(classification.title);
+    const alterative = generateSmartAlternative();
+    const habitTip = generateHabitTip();
+
+    const container = document.getElementById('resultContent');
+    container.innerHTML = `
+      <div class="flip-in">
+        <span class="risk-badge ${risk.class}">Impulse Risk: ${risk.label}</span>
+        <h2 class="classification-title">${classification.title}</h2>
+        <p class="classification-desc">${classification.desc}</p>
+        
+        <div class="insight-card">
+          <h3>💡 Smart Alternative</h3>
+          <p>${alterative}</p>
+        </div>
+        
+        <div class="insight-card">
+          <h3>🧠 Behavioral Target</h3>
+          <p>${habitTip}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  /*
+  =========================================
+  TEST CASES (Run visually by following prompt)
+  =========================================
+  
+  Test Case A:
+  - Input: Sweet -> Stressed -> Hunger 2 -> Night
+  - Expected: 
+      Type: "Emotional Reward Craving"
+      Risk: High
+      Tip: "Wait 10 minutes..."
+
+  Test Case B:
+  - Input: Salty -> Bored -> Hunger 1 -> Afternoon
+  - Expected:
+      Type: "Dopamine-Seeking"
+      Risk: Medium
+      Tip: "Change your environment..."
+
+  Test Case C:
+  - Input: Fast Food -> Neutral -> Hunger 5 -> Morning
+  - Expected:
+      Type: "Genuine Hunger"
+      Risk: Low
+      Alternative: Homemade wrap / baked potato...
+  =========================================
+  */
+</script>
+</body>
+</html>
